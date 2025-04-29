@@ -26,6 +26,34 @@ class _MessageListScreenState extends State<MessageListScreen> {
     _loadMessages();
   }
 
+  // void _uploadGroupToTwitter() async {
+  //   final selectedMessages = _messages.where((msg) => _selectedIds.contains(msg.id)).toList();
+  //   if (selectedMessages.isEmpty) return;
+  //
+  //   String content = '';
+  //   for (var message in selectedMessages) {
+  //     content += message.content;
+  //     if (message.description != null && message.description!.isNotEmpty) {
+  //       content += '\n${message.description}';
+  //     }
+  //     content += '\n\n';
+  //   }
+  //
+  //   try {
+  //     // Initialize TwitterService
+  //     final twitterService = TwitterService();
+  //
+  //     // Post the tweet using TwitterService
+  //     await twitterService.postTweet(content);
+  //
+  //     // Show success message
+  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully posted to Twitter')));
+  //   } catch (e) {
+  //     // Handle error posting tweet
+  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error posting to Twitter')));
+  //   }
+  // }
+
   void _uploadGroupToTwitter() async {
     final selectedMessages = _messages.where((msg) => _selectedIds.contains(msg.id)).toList();
     if (selectedMessages.isEmpty) return;
@@ -39,18 +67,43 @@ class _MessageListScreenState extends State<MessageListScreen> {
       content += '\n\n';
     }
 
-    try {
-      // Initialize TwitterService
-      final twitterService = TwitterService();
+    // Show confirmation dialog before posting to Twitter
+    bool? confirmUpload = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Upload to Twitter'),
+          content: Text(
+              'You are about to upload the selected messages as text. No images will be posted. Proceed?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Upload'),
+            ),
+          ],
+        );
+      },
+    );
 
-      // Post the tweet using TwitterService
-      await twitterService.postTweet(content);
+    // If confirmed, proceed with upload to Twitter
+    if (confirmUpload == true) {
+      try {
+        // Initialize TwitterService
+        final twitterService = TwitterService();
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully posted to Twitter')));
-    } catch (e) {
-      // Handle error posting tweet
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error posting to Twitter')));
+        // Post the tweet using TwitterService (only the text content)
+        await twitterService.postTweet(content);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully posted to Twitter')));
+      } catch (e) {
+        // Handle error posting tweet
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error posting to Twitter')));
+      }
     }
   }
 
@@ -69,11 +122,36 @@ class _MessageListScreenState extends State<MessageListScreen> {
   }
 
   void _deleteSelected() async {
-    await DatabaseHelper().deleteMultipleMessages(_selectedIds);
-    setState(() {
-      _selectedIds.clear();
-    });
-    _loadMessages();
+    // Show confirmation dialog
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Messages'),
+          content: Text('Are you sure you want to delete all selected messages?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If confirmed, proceed with deletion
+    if (confirmDelete == true) {
+      await DatabaseHelper().deleteMultipleMessages(_selectedIds);
+      setState(() {
+        _selectedIds.clear();
+      });
+      _loadMessages();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Selected messages deleted')));
+    }
   }
 
   void _deleteMessage(int id) async {
@@ -323,6 +401,26 @@ class _MessageListScreenState extends State<MessageListScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => MessageFormScreen()),
+              ).then((_) {
+                _loadMessages();
+              });
+            },
+            icon: Icon(Icons.add, color: Colors.black),
+            label: Text(
+              "Add new",
+              style: TextStyle(color: Colors.black),
+            ),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+            ),
+          ),
+
+          // PopupMenuButton for Delete and Upload
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'delete') {
@@ -355,9 +453,8 @@ class _MessageListScreenState extends State<MessageListScreen> {
                 ),
               ),
             ],
-          )
+          ),
         ],
-
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(60),
           child: Padding(
@@ -379,6 +476,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
           ),
         ),
       ),
+
       body: SafeArea(
         child: ListView.builder(
           physics: BouncingScrollPhysics(),
@@ -388,15 +486,15 @@ class _MessageListScreenState extends State<MessageListScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => MessageFormScreen()),
-          ).then((_) => _loadMessages());
-        },
-        child: Icon(Icons.add),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (_) => MessageFormScreen()),
+      //     ).then((_) => _loadMessages());
+      //   },
+      //   child: Icon(Icons.add),
+      // ),
     );
   }
 }
