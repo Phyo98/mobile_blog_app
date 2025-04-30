@@ -132,7 +132,7 @@ class _MessageFormScreenState extends State<MessageFormScreen> {
                     TextField(
                       controller: _descriptionController,
                       maxLines: null,
-                      minLines: 3,
+                      minLines: 2,
                       style: TextStyle(fontSize: 16),
                       decoration: InputDecoration(
                         hintText: "What is on your mind?",
