@@ -212,18 +212,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
               width: 2,
             ),
           ),
-          color: Color(0xFFFFFFFF),
-          child: GestureDetector(
-            onLongPress: () {
-              setState(() {
-                // Toggle the selection on long press
-                if (isSelected) {
-                  _selectedIds.remove(message.id);
-                } else {
-                  _selectedIds.add(message.id!);
-                }
-              });
-            },
+          color: isSelected ? Color(0xFFD3D3D3) : Colors.white, // Soft gray when selected
             child: Stack(
             children: [
               Column(
@@ -272,7 +261,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[700],
+                                  color: isSelected ? Colors.black : Colors.grey[700],
                                 ),
                               ),
                             ),
@@ -281,16 +270,15 @@ class _MessageListScreenState extends State<MessageListScreen> {
                             message.createdAt != null
                                 ? DateFormat('MMM dd, yyyy – hh:mm a').format(message.createdAt!)
                                 : "",
-                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            style: TextStyle(color: isSelected ? Colors.black : Colors.grey[600], fontSize: 13),
                           ),
                         ],
                       ),
                     ),
                   ),
-
                   // Divider
                   Divider(
-                    color: Colors.grey.shade300,
+                    color: isSelected ? Colors.black : Colors.grey.shade300,
                     thickness: 1,
                     height: 1,
                     indent: 16,
@@ -385,12 +373,16 @@ class _MessageListScreenState extends State<MessageListScreen> {
                       }
                     });
                   },
+                  child: Icon(
+                    isSelected ? Icons.check_circle : Icons.check_circle_outline,
+                    color: isSelected ? Colors.black : Colors.grey,
+                    size: 30,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      )
     );
   }
 
@@ -426,9 +418,9 @@ class _MessageListScreenState extends State<MessageListScreen> {
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'delete') {
-                if (_selectedIds.isNotEmpty) _deleteSelected();
+                _deleteSelected();
               } else if (value == 'upload') {
-                if (_selectedIds.isNotEmpty) _uploadGroupToTwitter();
+                _uploadGroupToTwitter();
               }
             },
             icon: Icon(
@@ -438,7 +430,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'delete',
-                enabled: _selectedIds.isNotEmpty,
+                enabled: _selectedIds.length >= 2,
                 child: Row(
                   children: [
                     Icon(Icons.delete_forever, color: Colors.red),
@@ -449,7 +441,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
               ),
               PopupMenuItem(
                 value: 'upload',
-                enabled: _selectedIds.isNotEmpty,
+                enabled: _selectedIds.length >= 2,
                 child: Row(
                   children: [
                     Icon(Icons.cloud_upload, color: Colors.blue),
